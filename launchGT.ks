@@ -11,6 +11,7 @@ PARAMETER maxG IS 2.5.
 // TODO - exec manoeuver
 // TODO - detect clamps
 // TODO - try non forced GT
+// TODO - handle asparagus staging
 
 clearScreen.
 

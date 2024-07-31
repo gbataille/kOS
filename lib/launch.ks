@@ -29,7 +29,6 @@ GLOBAL FUNCTION countdown {
    voice:PLAY(voiceTickNote).
    PRINT "IGNITION".
    STAGE.
-   // TODO
    WAIT 1. 
    IF maxTwr() < 1.2 {
       PRINT " ".
@@ -38,9 +37,13 @@ GLOBAL FUNCTION countdown {
       PRINT "Scrub launch.".
       PRINT " ".
    } ELSE {
-      PRINT "LAUNCH!".
+      IF ship:velocity:surface:mag < 1 {
+         PRINT "Releasing".
+         // means it's clamped
+         STAGE.
+      }
       voice:PLAY(voiceTakeOffNote).  
-      STAGE.
+      PRINT "LAUNCH!".
    }
    WAIT 2.
 }
