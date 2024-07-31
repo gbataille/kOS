@@ -29,6 +29,7 @@ GLOBAL FUNCTION countdown {
    voice:PLAY(voiceTickNote).
    PRINT "IGNITION".
    STAGE.
+   // TODO
    WAIT 1. 
    IF maxTwr() < 1.2 {
       PRINT " ".

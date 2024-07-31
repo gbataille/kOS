@@ -1,40 +1,46 @@
 RUNONCEPATH("0:/lib/launch.ks").
 
-PARAMETER targetOrbitAlt IS 90_000.
-PARAMETER halfPitchAlt IS 20_000.
+PARAMETER targetOrbitAlt IS 100_000.
+PARAMETER halfPitchAlt IS 15_000.
 PARAMETER maxG IS 2.5.
+
+// TODO - staging
+// TODO - heading
+// TODO - if thrust not enough
+// TODO - circularisation
+// TODO - exec manoeuver
+// TODO - detect clamps
+// TODO - try non forced GT
 
 clearScreen.
 
 countdown().
 
 WAIT UNTIL ship:velocity:surface:mag > 50.
-PRINT "Pitching".
+PRINT "Starting to pitch".
 LOCK STEERING TO LOOKDIRUP(HEADING(90,(90 - 45 * altitude / halfPitchAlt)):FOREVECTOR,SHIP:FACING:TOPVECTOR).
+wait 10.
+PRINT "Locking pitched attitude".
+LOCK STEERING TO LOOKDIRUP(ship:facing:forevector,SHIP:FACING:TOPVECTOR).
 
-WHEN (throttle > (maxG * ship:mass * constant:g0 / ship:availablethrust)) THEN {
-    PRINT "Throttling down to ${maxG}".
-    LOCK throttle to (maxG * ship:mass * constant:g0 / ship:availablethrust).
-}
-
-WAIT UNTIL altitude > halfPitchAlt.
-LOCK STEERING TO LOOKDIRUP(HEADING(90,45):FOREVECTOR,SHIP:FACING:TOPVECTOR).
-PRINT "Mid-pitch. Waiting for prograde to catch up".
-
-WAIT UNTIL (vAng(ship:velocity:surface:vec, heading(90, 45):vector)) < 1.
+WAIT UNTIL (vAng(ship:velocity:surface:vec, ship:srfprograde:forevector)) < 1.
 PRINT "Locking to surface prograde".
 LOCK STEERING TO LOOKDIRUP(srfPrograde:forevector,SHIP:FACING:TOPVECTOR).
 
-WHEN (vAng(ship:srfprograde:forevector, ship:prograde:forevector) < 1) THEN {
+WHEN (vAng(ship:srfprograde:forevector, ship:prograde:forevector) < 2) THEN {
     PRINT "Locking to orbit prograde".
     LOCK STEERING TO LOOKDIRUP(prograde:forevector,SHIP:FACING:TOPVECTOR).
 }
 
-WHEN (eta:apoapsis > 60) THEN {
-    PRINT "Throttling down to 1.1".
-    lock throttle to (1.1 * ship:mass * constant:g0 / ship:availablethrust).
+set apoEtaPid to pidLoop(1, 0, 0, 0.1, maxG, 0.1).
+set apoEtaPid:setpoint to 60.
+until (ship:orbit:apoapsis > targetOrbitAlt) {
+    lockTwr(apoEtaPid:update(time:seconds, eta:apoapsis)).
+    wait 0.
 }
 
+print "meco".
+lock throttle to 0.
 
 WAIT UNTIL ship:apoapsis > targetOrbitAlt.
 PRINT "Just needs circularizing now".
