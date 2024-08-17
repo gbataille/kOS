@@ -1,4 +1,5 @@
 RUNONCEPATH("0:/lib/launchUtils.ks").
+RUNONCEPATH("0:/lib/maneuverUtils.ks").
 RUNONCEPATH("0:/lib/ship.ks").
 
 PARAMETER targetHeading IS 0.
@@ -24,7 +25,7 @@ countdown().
 
 WHEN ship:velocity:surface:mag > 50 THEN {
     PRINT "Starting to pitch".
-    LOCK STEERING TO LOOKDIRUP(HEADING(90 + targetHeading,(90 - 45 * altitude / halfPitchAlt)):FOREVECTOR,SHIP:FACING:TOPVECTOR).
+    LOCK STEERING TO LOOKDIRUP(HEADING(90 - targetHeading,(90 - 45 * altitude / halfPitchAlt)):FOREVECTOR,SHIP:FACING:TOPVECTOR).
 }
 
 WHEN (vAng(UP:vector, ship:velocity:surface:vec)) > 20 THEN {
@@ -44,8 +45,9 @@ WHEN stage:deltav:current < 1 THEN {
     return true.
 }
 
-WHEN ship:altitude > fairingDeployAlt THEN {
-    TOGGLE AG5.
+WHEN (ship:q * constant:atmtokpa) < 0.1 AND ship:altitude > 10_000 THEN {
+    // Altitude check to make sure this does not happen on launch, as the pressure is low at ground level and 0 speed
+    toggle ag5.
 }
 
 set apoEtaPid to pidLoop(1, 0, 0.2, 0.5, maxG, 0.05).
@@ -71,6 +73,29 @@ until (ship:orbit:apoapsis > targetOrbitAlt) {
 print "meco".
 lock throttle to 0.
 PRINT "Just needs circularizing now".
-RUN circat.
-PRINT "DONE".
+
+// Dry run of maneuver to tune engine thrust limiter
+for e IN ship:engines {
+    SET e:thrustlimit TO 100.
+}
+circat().
+SET bTime TO burnTime().
+PRINT "BURN time : " + bTime.
+IF (bTime < 10) {
+    PRINT "BURN time small".
+    SET factor TO 100 / 15 * bTime.
+    PRINT "SETTING thrustlimit to " + factor.
+    for e IN ship:engines {
+        SET e:thrustlimit TO factor.
+    }
+}
+remove nextNode.
+
+circat().
+xman().
+for e IN ship:engines {
+    SET e:thrustlimit TO 100.
+}
+PRINT "Orbit achieved".
+TOGGLE AG0.
 SAS ON.
