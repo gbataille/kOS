@@ -2,6 +2,10 @@ GLOBAL FUNCTION maxTwr {
     return ship:availablethrust / ship:mass / constant:g0.
 }
 
+GLOBAL FUNCTION currentTwr {
+    return (ship:availablethrust / ship:mass / constant:g0) * throttle.
+}
+
 GLOBAL FUNCTION lockTwr {
     PARAMETER twr.
     // max(x, 1) protects against division by 0

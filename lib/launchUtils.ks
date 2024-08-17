@@ -29,7 +29,20 @@ GLOBAL FUNCTION countdown {
    voice:PLAY(voiceTickNote).
    PRINT "IGNITION".
    STAGE.
-   WAIT 1. 
+
+   IF ship:velocity:surface:mag < 1 {
+      // means it's clamped
+      WAIT UNTIL stage:ready.
+      if maxTwr() < 1.2 {
+         // Motor needs to warm up?
+         WAIT 1.
+      }
+      if maxTwr() > 1.2 {
+         PRINT "Releasing".
+         STAGE.
+      }
+   }
+
    IF maxTwr() < 1.2 {
       PRINT " ".
       PRINT "Subnominal thrust detected.".
@@ -37,11 +50,6 @@ GLOBAL FUNCTION countdown {
       PRINT "Scrub launch.".
       PRINT " ".
    } ELSE {
-      IF ship:velocity:surface:mag < 1 {
-         PRINT "Releasing".
-         // means it's clamped
-         STAGE.
-      }
       voice:PLAY(voiceTakeOffNote).  
       PRINT "LAUNCH!".
    }
